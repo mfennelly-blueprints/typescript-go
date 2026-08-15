@@ -8,6 +8,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/mackerelio/go-osstat v0.2.7
 	github.com/peter-evans/patience v0.3.0
+	github.com/spf13/cobra v1.10.2
 	github.com/zeebo/xxh3 v1.1.0
 	golang.org/x/sync v0.21.0
 	golang.org/x/sys v0.46.0
@@ -105,7 +106,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/spf13/viper v1.21.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect

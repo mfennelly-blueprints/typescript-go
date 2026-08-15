@@ -11,8 +11,7 @@ build:
 	@mkdir -p $(BIN_DIR)
 	$(GO) build -o $(TARGET) .
 
-# install installs tsart to GOBIN, or GOPATH/bin when GOBIN is unset.
-install:
+# install builds tsart and installs it for the Neovim host configuration.
+install: build
 	mkdir -p $(TSART_CONFIG_DIR)
 	cp $(TARGET) $(TSART_CONFIG_DIR)
-	alias tsart='$(TSART_BINARY)'

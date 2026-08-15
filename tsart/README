@@ -1,0 +1,39 @@
+tsart - Automated Refactoring Tools, for Typescript 7.0.2
+--------------------
+
+Neovim AST selection
+--------------------
+
+`tsart nvim` runs a Neovim remote-plugin host. It provides `:TsartSelectAST`,
+which parses the current buffer (including unsaved edits) and reports the AST
+token under the cursor with its TypeScript byte range. `:TsartHighlightAST`
+highlights that token in the buffer; `:TsartClearASTHighlight` removes it.
+
+Build and install the host first:
+
+```sh
+make install
+```
+
+Then register it from your Neovim config. The install target writes the binary
+to `~/.config/tsart/tsart`, so the host does not accidentally use an older
+`tsart` found elsewhere on `PATH`:
+
+```vim
+let s:tsart_binary = expand('~/.config/tsart/tsart')
+function! s:RequireTsart(host) abort
+  return jobstart([s:tsart_binary, 'nvim'], {'rpc': v:true})
+endfunction
+call remote#host#Register('tsart', 'x', function('s:RequireTsart'))
+call remote#host#RegisterPlugin('tsart', '0', [
+   {'type': 'command', 'name': 'TsartSelectAST', 'sync': 1,
+    'opts': {'eval': '{''FileName'': expand(''%:p''), ''Text'': join(getline(1, ''$''), "\\n"), ''Line'': line(''.''), ''Column'': col(''.'') - 1}'}},
+   {'type': 'command', 'name': 'TsartHighlightAST', 'sync': 1,
+    'opts': {'eval': '{''FileName'': expand(''%:p''), ''Text'': join(getline(1, ''$''), "\\n"), ''Line'': line(''.''), ''Column'': col(''.'') - 1}'}},
+   {'type': 'command', 'name': 'TsartClearASTHighlight', 'sync': 1, 'opts': {}},
+   ])
+```
+
+Open a TypeScript buffer, put the cursor on a symbol, then run
+`:TsartHighlightAST`. The highlight uses Neovim's `Visual` highlight group,
+so it follows your colorscheme.
