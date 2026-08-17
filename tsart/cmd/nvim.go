@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"unicode/utf8"
 
@@ -121,19 +122,19 @@ func clearASTHighlight(v *nvim.Nvim) error {
 // buffer, so the highlight and comment move with the annotated text.
 func annotateVisualSelection(v *nvim.Nvim, args []string, _ [2]int, selected *nvimVisualSelection) error {
 	if selected.Mode == "\x16" {
-		return fmt.Errorf("blockwise Visual selections are not supported")
+		return logNvimHandlerError("annotating Visual selection", fmt.Errorf("blockwise Visual selections are not supported"))
 	}
 	startRow, startCol, endRow, endCol, err := visualSelectionRange(selected)
 	if err != nil {
-		return err
+		return logNvimHandlerError("annotating Visual selection", err)
 	}
 	buffer, err := v.CurrentBuffer()
 	if err != nil {
-		return err
+		return logNvimHandlerError("getting current buffer for annotation", err)
 	}
 	namespace, err := v.CreateNamespace("tsart-comments")
 	if err != nil {
-		return err
+		return logNvimHandlerError("creating annotation namespace", err)
 	}
 	comment := strings.Join(args, " ")
 	_, err = v.SetBufferExtmark(buffer, namespace, startRow, startCol, map[string]interface{}{
@@ -147,20 +148,27 @@ func annotateVisualSelection(v *nvim.Nvim, args []string, _ [2]int, selected *nv
 		"virt_text_pos": "eol",
 	})
 	if err != nil {
-		return err
+		return logNvimHandlerError("creating annotation extmark", err)
 	}
 	return v.Echo([]nvim.TextChunk{{Text: "tsart annotation added"}}, true, map[string]interface{}{})
+}
+
+// logNvimHandlerError makes errors returned through Neovim RPC visible in the
+// host's stderr. register_plugin.vim appends that stream to tsart.log.
+func logNvimHandlerError(operation string, err error) error {
+	fmt.Fprintf(os.Stderr, "tsart: %s: %v\n", operation, err)
+	return err
 }
 
 // visualSelectionRange converts Neovim's one-based, inclusive Visual marks
 // into the zero-based, end-exclusive range expected by an extmark.
 func visualSelectionRange(selected *nvimVisualSelection) (startRow, startCol, endRow, endCol int, err error) {
 	if selected.StartLine < 1 || selected.EndLine < selected.StartLine || selected.StartColumn < 1 || selected.EndColumn < 1 {
-		return 0, 0, 0, 0, fmt.Errorf("no Visual selection is available")
+		return 0, 0, 0, 0, fmt.Errorf("no Visual selection is available (start=%d:%d, end=%d:%d, mode=%q, buffer lines=%d)", selected.StartLine, selected.StartColumn, selected.EndLine, selected.EndColumn, selected.Mode, len(strings.Split(selected.Text, "\n")))
 	}
 	lines := strings.Split(selected.Text, "\n")
 	if selected.EndLine > len(lines) {
-		return 0, 0, 0, 0, fmt.Errorf("Visual selection is outside the buffer")
+		return 0, 0, 0, 0, fmt.Errorf("Visual selection ends at line %d, but the buffer has %d lines (start=%d:%d, end=%d:%d, mode=%q)", selected.EndLine, len(lines), selected.StartLine, selected.StartColumn, selected.EndLine, selected.EndColumn, selected.Mode)
 	}
 	startRow, startCol = selected.StartLine-1, selected.StartColumn-1
 	endRow = selected.EndLine - 1
@@ -169,7 +177,7 @@ func visualSelectionRange(selected *nvimVisualSelection) (startRow, startCol, en
 	}
 	endStart := selected.EndColumn - 1
 	if endStart >= len(lines[endRow]) {
-		return 0, 0, 0, 0, fmt.Errorf("Visual selection is outside the buffer")
+		return 0, 0, 0, 0, fmt.Errorf("Visual selection ends at byte column %d on line %d, but that line has %d bytes (start=%d:%d, end=%d:%d, mode=%q)", selected.EndColumn, selected.EndLine, len(lines[endRow]), selected.StartLine, selected.StartColumn, selected.EndLine, selected.EndColumn, selected.Mode)
 	}
 	_, width := utf8.DecodeRuneInString(lines[endRow][endStart:])
 	if width == 0 || (width == 1 && lines[endRow][endStart] >= utf8.RuneSelf) {

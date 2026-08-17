@@ -15,12 +15,19 @@ Build and install the host first:
 make install
 ```
 
-Then register it from your Neovim config. The install target writes the binary
-to `~/.config/tsart/tsart`, so the host does not accidentally use an older
-`tsart` found elsewhere on `PATH`:
+`make install` writes the binary to `~/.config/tsart/tsart` and installs
+`register_plugin.vim` to
+`~/.config/nvim/plugin/tsart.vim`. That file is loaded automatically by
+Neovim, and `~/.config/nvim/lua/config/tsart.lua` becomes a small compatibility
+loader for existing `require("config.tsart")` calls. Edit `register_plugin.vim`
+and rerun `make install` to update the global configuration. `.nvimrc` retains
+only repository-local mappings and sources that file for local development.
+
+The installed Vimscript is:
 
 ```vim
-let s:tsart_binary = expand('~/.config/tsart/tsart')
+let s:tsart_binary = get(g:, 'tsart_binary', expand('~/.config/tsart/tsart'))
+let s:tsart_log_file = get(g:, 'tsart_log_file', stdpath('log') . '/tsart.log')
 function! s:RequireTsart(host) abort
   return jobstart([s:tsart_binary, 'nvim'], {'rpc': v:true})
 endfunction
@@ -36,9 +43,27 @@ call remote#host#RegisterPlugin('tsart', '0', [
    ])
 ```
 
-Open a TypeScript buffer, put the cursor on a symbol, then run
+For repository-local development, `.nvimrc` sets `g:tsart_binary` to
+`bin/tsart`, which is useful in sandboxed Neovim sessions that cannot execute
+programs under `~/.config`. Open a TypeScript buffer, put the cursor on a symbol, then run
 `:TsartHighlightAST`. The highlight uses Neovim's `Visual` highlight group,
 so it follows your colorscheme.
+
+Logging
+-------
+
+The host's stderr and its exit status are appended to
+`stdpath('log') . '/tsart.log'` (normally `~/.local/state/nvim/log/tsart.log`).
+Run `:TsartLog` to display the active path. Set `g:tsart_log_file` before the
+plugin is loaded to use another path, for example:
+
+```vim
+let g:tsart_log_file = '/tmp/tsart-nvim.log'
+```
+
+The log records each host launch and exit, host stderr (including Go panics and
+annotation-handler errors), and other startup failures. It deliberately does
+not capture stdout because stdout is the Neovim RPC transport.
 
 Visual annotations
 ------------------
