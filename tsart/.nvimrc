@@ -16,14 +16,42 @@ call remote#host#Register('tsart', 'x', function('s:RequireTsart'))
 let s:RemoteHostName = 'tsart'
 let s:RemoteHostChannelIdentifier = '0'
 
-" Register the commands for this plugin
-let s:ASTSelectCommandRPC = {'type': 'command', 'name': 'TsartSelectAST', 'sync': 1,
-         \  'opts': {'eval': '{''FileName'': expand(''%:p''), ''Text'': join(getline(1, ''$''), "\\n"), ''Line'': line(''.''), ''Column'': col(''.'') - 1}'}}
-let s:ASTHighlightCmd = {'type': 'command', 'name': 'TsartHighlightAST', 'sync': 1,
-         \  'opts': {'eval': '{''FileName'': expand(''%:p''), ''Text'': join(getline(1, ''$''), "\\n"), ''Line'': line(''.''), ''Column'': col(''.'') - 1}'}} 
-let s:ASTHighlightClearCommand = {'type': 'command', 'name': 'TsartClearASTHighlight', 'sync': 1, 'opts': {}}
-let s:AnnotateSelectionCmd = {'type': 'command', 'name': 'TsartAnnotateSelection', 'sync': 1,
-         \  'opts': {'nargs': '+', 'range': '', 'eval': '{''Text'': join(getline(1, ''$''), "\\n"), ''StartLine'': line("''<"), ''StartColumn'': col("''<"), ''EndLine'': line("''>"), ''EndColumn'': col("''>"), ''Mode'': visualmode()}'}}
+" Register the commands for this plugin.
+let s:ASTSelectCommandRPC = {
+\ 'type': 'command',
+\ 'name': 'TsartSelectAST',
+\ 'sync': 1,
+\ 'opts': {
+\   'eval': '{''FileName'': expand(''%:p''), ''Text'': join(getline(1, ''$''), "\\n"), ''Line'': line(''.''), ''Column'': col(''.'') - 1}',
+\ },
+\}
+
+let s:ASTHighlightCmd = {
+\ 'type': 'command',
+\ 'name': 'TsartHighlightAST',
+\ 'sync': 1,
+\ 'opts': {
+\   'eval': '{''FileName'': expand(''%:p''), ''Text'': join(getline(1, ''$''), "\\n"), ''Line'': line(''.''), ''Column'': col(''.'') - 1}',
+\ },
+\}
+
+let s:ASTHighlightClearCommand = {
+\ 'type': 'command',
+\ 'name': 'TsartClearASTHighlight',
+\ 'sync': 1,
+\ 'opts': {},
+\}
+
+let s:AnnotateSelectionCmd = {
+\ 'type': 'command',
+\ 'name': 'TsartAnnotateSelection',
+\ 'sync': 1,
+\ 'opts': {
+\   'nargs': '+',
+\   'range': '',
+\   'eval': '{''Text'': join(getline(1, ''$''), "\\n"), ''StartLine'': line("''<"), ''StartColumn'': col("''<"), ''EndLine'': line("''>"), ''EndColumn'': col("''>"), ''Mode'': visualmode()}',
+\ },
+\}
 
 let s:RPCCommands = [
 \ s:ASTSelectCommandRPC,
