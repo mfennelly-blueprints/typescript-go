@@ -35,3 +35,32 @@ func TestBufferPositionAtOffsetRejectsInvalidOffsets(t *testing.T) {
 		t.Fatal("offset beyond the buffer was accepted")
 	}
 }
+
+func TestVisualSelectionRange(t *testing.T) {
+	selected := &nvimVisualSelection{
+		Text:        "const café = 1\nreturn café",
+		StartLine:   1,
+		StartColumn: 7,
+		EndLine:     2,
+		EndColumn:   11,
+		Mode:        "v",
+	}
+	startRow, startCol, endRow, endCol, err := visualSelectionRange(selected)
+	if err != nil {
+		t.Fatalf("visualSelectionRange returned error: %v", err)
+	}
+	if startRow != 0 || startCol != 6 || endRow != 1 || endCol != 12 {
+		t.Errorf("visualSelectionRange = (%d, %d, %d, %d), want (0, 6, 1, 12)", startRow, startCol, endRow, endCol)
+	}
+}
+
+func TestVisualSelectionRangeLinewise(t *testing.T) {
+	selected := &nvimVisualSelection{Text: "one\ntwo\nthree", StartLine: 1, StartColumn: 1, EndLine: 2, EndColumn: 3, Mode: "V"}
+	startRow, startCol, endRow, endCol, err := visualSelectionRange(selected)
+	if err != nil {
+		t.Fatalf("visualSelectionRange returned error: %v", err)
+	}
+	if startRow != 0 || startCol != 0 || endRow != 1 || endCol != 3 {
+		t.Errorf("visualSelectionRange = (%d, %d, %d, %d), want (0, 0, 1, 3)", startRow, startCol, endRow, endCol)
+	}
+}

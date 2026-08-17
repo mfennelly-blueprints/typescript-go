@@ -25,6 +25,8 @@ call remote#host#RegisterPlugin('tsart', '0', [
   \ {'type': 'command', 'name': 'TsartHighlightAST', 'sync': 1,
   \  'opts': {'eval': '{''FileName'': expand(''%:p''), ''Text'': join(getline(1, ''$''), "\\n"), ''Line'': line(''.''), ''Column'': col(''.'') - 1}'}},
   \ {'type': 'command', 'name': 'TsartClearASTHighlight', 'sync': 1, 'opts': {}},
+  \ {'type': 'command', 'name': 'TsartAnnotateSelection', 'sync': 1,
+  \  'opts': {'nargs': '+', 'range': '', 'eval': '{''Text'': join(getline(1, ''$''), "\\n"), ''StartLine'': line("''<"), ''StartColumn'': col("''<"), ''EndLine'': line("''>"), ''EndColumn'': col("''>"), ''Mode'': visualmode()}'}},
   \ ])
 ]])
 
