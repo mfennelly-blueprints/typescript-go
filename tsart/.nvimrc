@@ -1,5 +1,4 @@
 nnoremap <silent> <leader>tb :!make<CR>
-nnoremap <silent> <leader>ai :Codex<CR>
 nnoremap <silent> <leader>ti :!make install<CR>
 
 " When editing this checkout, run the locally built host. This also avoids
