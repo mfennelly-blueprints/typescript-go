@@ -79,6 +79,7 @@ func (sf *SourceFileDecoratorImpl) extractSubtrees(functionName string) error {
 
 		for _, local := range getLocalsForFn(fnDec) {
 			printKind(local)
+			sf.printNodeSource(local)
 		}
 
 		for _, ret := range getLZeroNodesFromFn(fnDec) {

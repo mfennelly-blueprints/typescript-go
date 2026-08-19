@@ -6,7 +6,7 @@ import (
 )
 
 const FILE_NAME = "/Users/mikeyuseblueprintsai.appleaccount.com/projects/cc-services/hoplite/apps/api/src/db-app.ts"
-const FUNCTION_NAME = "createDbBackedApp"
+const FUNCTION_SYMBOL_NAME = "singleFlightTask"
 
 // TestTraceExample is intentionally organized as a debugging aid. Run it with:
 //
@@ -60,4 +60,5 @@ func TestExtractSubtrees(t *testing.T) {
 	fileName = filepath.ToSlash(fileName)
 	sourceFile := NewSourceFileDecoratorImpl(fileName)
 	sourceFile.extractSubtrees("singleFlightTask")
+	sourceFile.extractSubtrees("createDbBackedApp")
 }
