@@ -46,7 +46,7 @@ func RunNvimPlugin() {
 }
 
 func registerNvimHandlers(p *plugin.Plugin) error {
-	p.HandleCommand(&plugin.CommandOptions{Name: "TsartSelectAST", Eval: "*"}, selectASTAtCursor)
+	p.HandleCommand(&plugin.CommandOptions{Name: "TsartSelectAST", Eval: "*"}, echoASTNodeKindAtCursor)
 	p.HandleCommand(&plugin.CommandOptions{Name: "TsartHighlightAST", Eval: "*"}, highlightASTAtCursor)
 	p.HandleCommand(&plugin.CommandOptions{Name: "TsartClearASTHighlight"}, clearASTHighlight)
 	// A Visual-mode ':' command is prefixed with the '<,'> line range.  Accept
@@ -55,20 +55,20 @@ func registerNvimHandlers(p *plugin.Plugin) error {
 	return nil
 }
 
-func selectASTAtCursor(v *nvim.Nvim, selected *nvimSelection) error {
-	result, err := selection.At(selected.FileName, selected.Text, selected.Line, selected.Column)
+func echoASTNodeKindAtCursor(v *nvim.Nvim, selected *nvimSelection) error {
+	result, err := selection.AstNodeAtPosition(selected.FileName, selected.Text, selected.Line, selected.Column)
 	if err != nil {
 		return err
 	}
 	message := fmt.Sprintf("tsart AST: %s %q [%d,%d)", result.Kind, result.Text, result.Start, result.End)
-	return v.Echo([]nvim.TextChunk{{Text: message}}, true, map[string]interface{}{})
+	return v.Echo([]nvim.TextChunk{{Text: message}}, true, map[string]any{})
 }
 
 // highlightASTAtCursor highlights the smallest AST token containing the
 // cursor. The highlight is kept in its own namespace, so each invocation
 // replaces the previous tsart highlight without disturbing other plugins.
 func highlightASTAtCursor(v *nvim.Nvim, selected *nvimSelection) error {
-	result, err := selection.At(selected.FileName, selected.Text, selected.Line, selected.Column)
+	result, err := selection.AstNodeAtPosition(selected.FileName, selected.Text, selected.Line, selected.Column)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func highlightASTAtCursor(v *nvim.Nvim, selected *nvimSelection) error {
 	if err := v.ClearBufferNamespace(buffer, namespace, 0, -1); err != nil {
 		return err
 	}
-	_, err = v.SetBufferExtmark(buffer, namespace, startRow, startCol, map[string]interface{}{
+	_, err = v.SetBufferExtmark(buffer, namespace, startRow, startCol, map[string]any{
 		"end_row":  endRow,
 		"end_col":  endCol,
 		"hl_group": "Visual",
@@ -102,7 +102,7 @@ func highlightASTAtCursor(v *nvim.Nvim, selected *nvimSelection) error {
 		return err
 	}
 	message := fmt.Sprintf("tsart highlighted: %s %q", result.Kind, result.Text)
-	return v.Echo([]nvim.TextChunk{{Text: message}}, true, map[string]interface{}{})
+	return v.Echo([]nvim.TextChunk{{Text: message}}, true, map[string]any{})
 }
 
 func clearASTHighlight(v *nvim.Nvim) error {
@@ -137,20 +137,20 @@ func annotateVisualSelection(v *nvim.Nvim, args []string, _ [2]int, selected *nv
 		return logNvimHandlerError("creating annotation namespace", err)
 	}
 	comment := strings.Join(args, " ")
-	_, err = v.SetBufferExtmark(buffer, namespace, startRow, startCol, map[string]interface{}{
+	_, err = v.SetBufferExtmark(buffer, namespace, startRow, startCol, map[string]any{
 		"end_row":  endRow,
 		"end_col":  endCol,
 		"hl_group": "IncSearch",
 		"priority": 200,
-		"virt_text": []interface{}{
-			[]interface{}{fmt.Sprintf("  💬 %s", comment), "Comment"},
+		"virt_text": []any{
+			[]any{fmt.Sprintf("  💬 %s", comment), "Comment"},
 		},
 		"virt_text_pos": "eol",
 	})
 	if err != nil {
 		return logNvimHandlerError("creating annotation extmark", err)
 	}
-	return v.Echo([]nvim.TextChunk{{Text: "tsart annotation added"}}, true, map[string]interface{}{})
+	return v.Echo([]nvim.TextChunk{{Text: "tsart annotation added"}}, true, map[string]any{})
 }
 
 // logNvimHandlerError makes errors returned through Neovim RPC visible in the
