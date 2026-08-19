@@ -1,8 +1,25 @@
-tsart - Automated Refactoring Tools, for Typescript 7.0.2
---------------------
+# tsart - Automated Refactoring Tools, for Typescript 7.0.2
 
-Neovim AST selection
---------------------
+- [Setup Manual](#setup-guide)
+- [User Manual](#user-manual)
+
+----------
+# Concepts
+## Syntax Trees - Refactoring and Highlighting
+
+The editor is a fork of neovim, which uses the neovim remote 
+plugin interface to create abstract syntax tree based editing for users and 
+agents.
+Typically, editing is separated by revision/filesystem structure, rather than
+the ontological contents of the codebase. This allows you to identify verticals 
+for your agents based on where your code will be linked, rather than where it is
+located on the file system.
+
+So this is a different paradigm of editing and changing
+code - semantic traversal rather than filesystem traversal.
+
+----------
+# Setup Manual
 
 1. Build the remote plugin binary `make`
 2. Use the ./vim/register_plugin.vim script by running `make install`.
@@ -18,23 +35,18 @@ Common operations:
 
 `TsartFunctionLZero`: 
 
-Highlights the immediate `ast.Node` elements for symbols of type Kind that are direct children of the file including `KindParameter`, `KindVariableDeclaration`, `KindReturnStatement`, `KindBindingElement`
+Highlights the immediate `ast.Node` elements for symbols of type Kind that are 
+direct children of the file including `KindParameter`, `KindVariableDeclaration`,
+`KindReturnStatement`, `KindBindingElement`
 
 
 ----------
-## Ontological Editor
+# User Manual
 
-The editor is a fork of neovim, which uses the neovim remote 
-plugin interface to create abstract syntax tree based editing for users and agents.
-Typically, editing is separated by revision/filesystem structure, rather than the ontological contents of the codebase. This allows you to identify verticals for your agents based on where your code will be linked, rather than where it is located on the file system.
+## Working With TypeScript
+### Immediately available paradigms
 
-So this is a different paradigm of editing and changing
-code - semantic traversal rather than filesystem traversal.
-
-### Working With TypeScript
-#### Immediately available paradigms
-
-##### Functional TypeScript
+#### Functional TypeScript
 
 This expects a specific Syntax Tree shape.
 Namely that your source files consist of:
