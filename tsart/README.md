@@ -19,6 +19,13 @@ located on the file system.
 So this is a different paradigm of editing and changing
 code - semantic traversal rather than filesystem traversal.
 
+## Creating a Refactor Decision Graph
+
+This is a .jsonnet file that you can use to describe how to
+perform refactors on TypeScript code. It matches a deviation
+from some pattern, and plans a refactor to reach
+the result.
+
 ----------
 # Setup Manual
 
