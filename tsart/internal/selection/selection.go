@@ -23,42 +23,61 @@ type Result struct {
 	Text  string
 }
 
-// At parses text as fileName and returns the AST token at the supplied
-// one-based line and zero-based byte column. text is supplied by Neovim so
-// unsaved buffer changes are included in the AST.
-func At(fileName, text string, line, column int) (Result, error) {
-	if line < 1 || column < 0 {
-		return Result{}, fmt.Errorf("invalid cursor position %d:%d", line, column)
-	}
-
-	position, err := offsetForPosition(text, line, column)
-	if err != nil {
-		return Result{}, err
-	}
+func parseAstForSourceFile(fileName string, sourceText string) P {
 	absFileName, err := filepath.Abs(fileName)
 	if err != nil {
 		return Result{}, err
 	}
 	absFileName = filepath.ToSlash(absFileName)
-	file := parser.ParseSourceFile(ast.SourceFileParseOptions{
+
+	// parse the source file with the tsgo
+	// compiler
+	sourceFileParsingOptions := ast.SourceFileParseOptions{
 		FileName: absFileName,
 		Path:     tspath.ToPath(absFileName, "", true),
-	}, text, core.EnsureScriptKindFromFileName(absFileName))
-	node := astnav.GetTouchingToken(file, position)
+	}
+	core_ScriptKind := core.EnsureScriptKindFromFileName(absFileName)
+	ast_SourceFile := parser.ParseSourceFile(sourceFileParsingOptions, sourceText, core_ScriptKind)
+
+	return ast_SourceFile
+}
+
+// AstNodeAtPosition parses text as fileName and returns the AST token at the supplied
+// one-based line and zero-based byte column. sourceFileUtf8Contents is supplied by Neovim so
+// unsaved buffer changes are included in the AST.
+func AstNodeAtPosition(fileName string, sourceText string, line int, column int) (Result, error) {
+	if line < 1 || column < 0 {
+		return Result{}, fmt.Errorf("invalid cursor position %d:%d", line, column)
+	}
+
+	ast_SourceFile := parseAstForSourceFile(fileName, sourceText)
+
+	// get the position in the linearized file
+	position, err := offsetForPosition(sourceText, line, column)
+	if err != nil {
+		return Result{}, err
+	}
+	node := astnav.GetTouchingToken(ast_SourceFile, position)
 	if node == nil {
 		return Result{}, fmt.Errorf("no AST node at %d:%d", line, column)
 	}
 
-	start := scanner.GetTokenPosOfNode(node, file, false)
+	start := scanner.GetTokenPosOfNode(node, ast_SourceFile, false)
 	return Result{
 		Kind:  node.KindString(),
 		Start: start,
 		End:   node.End(),
-		Text:  text[start:node.End()],
+		Text:  sourceText[start:node.End()],
 	}, nil
 }
 
-func offsetForPosition(text string, line, column int) (int, error) {
+// offsetForPosition calculates the offset
+// from the position 0, when the 2 dimensional
+// file matrix is linearized
+func offsetForPosition(text string, line int, column int) (int, error) {
+	// take the raw text of the input
+	// and convert it into a stream of lines
+	// based on <CR> tokens
 	lines := strings.Split(text, "\n")
 	if line > len(lines) {
 		return 0, fmt.Errorf("line %d is outside the buffer", line)
