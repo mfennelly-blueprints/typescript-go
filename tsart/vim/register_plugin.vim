@@ -1,3 +1,6 @@
+" ---------------------------------------------------------------------------
+" Initial Config Setup
+" ---------------------------------------------------------------------------
 if exists('g:loaded_tsart_config')
   finish
 endif
@@ -8,6 +11,10 @@ let g:loaded_tsart_config = 1
 " <leader>ta to see the AST node selected by tsart.
 let s:tsart_binary = get(g:, 'tsart_binary', expand('~/.config/tsart/tsart'))
 let s:tsart_log_file = get(g:, 'tsart_log_file', stdpath('log') . '/tsart.log')
+
+" ---------------------------------------------------------------------------
+" Local setup & generic plugin lifecycle functions
+" ---------------------------------------------------------------------------
 
 " RPC owns stdout, but Neovim exposes a job's stderr separately.  Preserve it
 " so a host startup failure or panic is not reduced to "Invalid channel".
@@ -43,13 +50,14 @@ function! s:RequireTsart(host) abort
   return l:job
 endfunction
 
+" ---------------------------------------------------------------------------
+" Tsart commands
+" ---------------------------------------------------------------------------
 command! -bar TsartLog echo 'tsart log: ' . s:tsart_log_file
 
-" Register the plugin.
-call remote#host#Register('tsart', 'x', function('s:RequireTsart'))
-
-let s:RemoteHostName = 'tsart'
-let s:RemoteHostChannelIdentifier = '0'
+" ---------------------------------------------------------------------------
+" RPC payload definitions
+" ---------------------------------------------------------------------------
 
 let s:CursorSelectionEvalLines =<< trim END
 {
@@ -76,12 +84,6 @@ let s:VisualSelectionEval = join(s:VisualSelectionEvalLines, "\n")
 unlet s:VisualSelectionEvalLines
 
 " ASTSelectCommandRPC
-"
-" Sends an eval struct in the shape of:
-" FileName: Gets the current file - equivalent of running `:echo expand('%p')
-" Text:
-" Line:
-" Column:
 let s:ASTSelectCommandRPC = {
 \ 'type': 'command',
 \ 'name': 'TsartSelectAST',
@@ -125,4 +127,18 @@ let s:RPCCommands = [
 \ s:AnnotateSelectionCmd,
 \ ]
 
+" ---------------------------------------------------------------------------
+" Remote host registration, and plugin initialization
+" ---------------------------------------------------------------------------
+
+let s:RemoteHostName = 'tsart'
+let s:RemoteHostChannelIdentifier = '0'
+
+" Register the remote host.
+"
+" 'x' signifies the directory to store the remote
+" host plugins - so that :UpdateRemotePlugins can 
+" find such files.
+call remote#host#Register(s:RemoteHostName, 'x', function('s:RequireTsart'))
+" Register the plugin
 call remote#host#RegisterPlugin(s:RemoteHostName, s:RemoteHostChannelIdentifier, s:RPCCommands)
