@@ -1,5 +1,6 @@
 # tsart - Automated Refactoring Tools, for Typescript 7.0.2
 
+- [Concepts](#setup-guide)
 - [Setup Manual](#setup-guide)
 - [User Manual](#user-manual)
 
