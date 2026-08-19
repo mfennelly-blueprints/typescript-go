@@ -1,3 +1,5 @@
+// Tests the plugins capability to match vim selections (row/column)
+// with go parser positions (linearizes the matrix)
 package cmd
 
 import (
@@ -45,24 +47,8 @@ func newTestNvim(t *testing.T) *nvim.Nvim {
 	return headlessNvimClient
 }
 
-func TestSelectASTAtCursorEchoesSelection(t *testing.T) {
-	headlessNvimClient := newTestNvim(t)
-
-	// example selection mocks the scenario
-	// where  a user has their cursor on  a given
-	// file position, and sends a request payload
-	// which is routed to selectAstAtCursor
-	exampleSelection := getExampleSelection()
-	require.NoError(t, selectASTAtCursor(headlessNvimClient, exampleSelection))
-
-	messages, err := headlessNvimClient.Exec("messages", true)
-	require.NoError(t, err, "reading Neovim messages")
-
-	const want = `tsart AST: KindIdentifier "renamed" [29,36)`
-	assert.Contains(t, messages, want, "echoed message")
-}
-
-func TestBufferPositionAtOffset(t *testing.T) {
+func TestTranslate(t *testing.T) {
+	// EXPECT NO ERRORS
 	text := "const cafe = 1\n\u00e9x\n"
 	tests := []struct {
 		name       string
@@ -79,23 +65,29 @@ func TestBufferPositionAtOffset(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			row, column, err := bufferPositionAtOffset(text, test.offset)
+			row, column, err := get2DimPositionFrom1DimPosition(text, test.offset)
 			require.NoError(t, err)
 			assert.Equal(t, test.wantRow, row)
 			assert.Equal(t, test.wantColumn, column)
 		})
 	}
+
+	// EXPECT ERRORS
+	t.Run("get2DimPositionFrom1DimPosition returns error for negative offset", func(t *testing.T) {
+		_, _, err := get2DimPositionFrom1DimPosition("x", -1)
+		require.Error(t, err, "negative offset should be rejected")
+
+		_, _, err = get2DimPositionFrom1DimPosition("x", 2)
+		require.Error(t, err, "offset beyond the buffer should be rejected")
+	})
 }
 
-func TestBufferPositionAtOffsetRejectsInvalidOffsets(t *testing.T) {
-	_, _, err := bufferPositionAtOffset("x", -1)
-	require.Error(t, err, "negative offset should be rejected")
-
-	_, _, err = bufferPositionAtOffset("x", 2)
-	require.Error(t, err, "offset beyond the buffer should be rejected")
-}
-
-func TestVisualSelectionRange(t *testing.T) {
+// a Range is a neovim concept of how to identify
+// contiguous bytes in a file (matrix of bytes)
+// This tests if we can chose a Range (2 points)
+// in visual mode, and run the visualSelectionRange
+// function without error
+func TestVisualSelection_Range(t *testing.T) {
 	selected := &nvimVisualSelection{
 		Text:        "const café = 1\nreturn café",
 		StartLine:   1,
@@ -104,15 +96,17 @@ func TestVisualSelectionRange(t *testing.T) {
 		EndColumn:   11,
 		Mode:        "v",
 	}
-	startRow, startCol, endRow, endCol, err := visualSelectionRange(selected)
-	require.NoError(t, err)
-	assert.Equal(t, 0, startRow)
-	assert.Equal(t, 6, startCol)
-	assert.Equal(t, 1, endRow)
-	assert.Equal(t, 12, endCol)
+	t.Run("visualSelectionRange returns nil error for visual selection", func(t *testing.T) {
+		startRow, startCol, endRow, endCol, err := visualSelectionRange(selected)
+		require.NoError(t, err)
+		assert.Equal(t, 0, startRow)
+		assert.Equal(t, 6, startCol)
+		assert.Equal(t, 1, endRow)
+		assert.Equal(t, 12, endCol)
+	})
 }
 
-func TestVisualSelectionRangeLinewise(t *testing.T) {
+func TestVisualSelection_RangeLinewise(t *testing.T) {
 	selected := &nvimVisualSelection{Text: "one\ntwo\nthree", StartLine: 1, StartColumn: 1, EndLine: 2, EndColumn: 3, Mode: "V"}
 	startRow, startCol, endRow, endCol, err := visualSelectionRange(selected)
 	require.NoError(t, err)
@@ -122,7 +116,8 @@ func TestVisualSelectionRangeLinewise(t *testing.T) {
 	assert.Equal(t, 3, endCol)
 }
 
-func TestVisualSelectionRangeReportsOutOfBoundsDetails(t *testing.T) {
+func TestVisualSelection_RangeReportsOutOfBoundsDetails(t *testing.T) {
+
 	tests := []struct {
 		name     string
 		selected nvimVisualSelection
@@ -147,4 +142,23 @@ func TestVisualSelectionRangeReportsOutOfBoundsDetails(t *testing.T) {
 			assert.ErrorContains(t, err, test.want)
 		})
 	}
+}
+
+// TODO: Move this elsewhere, as we want to separate code for
+// translating file formats, from the lexical structures
+func TestSelect_BufferPosition_EchoesASTSelection(t *testing.T) {
+	headlessNvimClient := newTestNvim(t)
+
+	// example selection mocks the scenario
+	// where  a user has their cursor on  a given
+	// file position, and sends a request payload
+	// which is routed to echoASTNodeKindAtCursor
+	exampleSelection := getExampleSelection()
+	require.NoError(t, echoASTNodeKindAtCursor(headlessNvimClient, exampleSelection))
+
+	messages, err := headlessNvimClient.Exec("messages", true)
+	require.NoError(t, err, "reading Neovim messages")
+
+	const want = `tsart AST: KindIdentifier "renamed" [29,36)`
+	assert.Contains(t, messages, want, "echoed message")
 }

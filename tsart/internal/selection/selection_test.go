@@ -5,7 +5,7 @@ import "testing"
 func TestAtUsesTheLiveBufferText(t *testing.T) {
 	text := "function renamed(): void {\n  renamed()\n}\n"
 
-	got, err := At("example.ts", text, 2, 3)
+	got, err := AstNodeAtPosition("example.ts", text, 2, 3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,7 +18,7 @@ func TestAtUsesTheLiveBufferText(t *testing.T) {
 }
 
 func TestAtRejectsPositionsOutsideTheBuffer(t *testing.T) {
-	if _, err := At("example.ts", "const x = 1\n", 3, 0); err == nil {
+	if _, err := AstNodeAtPosition("example.ts", "const x = 1\n", 3, 0); err == nil {
 		t.Fatal("At() succeeded for a line outside the buffer")
 	}
 }

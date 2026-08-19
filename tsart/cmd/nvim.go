@@ -73,11 +73,11 @@ func highlightASTAtCursor(v *nvim.Nvim, selected *nvimSelection) error {
 		return err
 	}
 
-	startRow, startCol, err := bufferPositionAtOffset(selected.Text, result.Start)
+	startRow, startCol, err := get2DimPositionFrom1DimPosition(selected.Text, result.Start)
 	if err != nil {
 		return err
 	}
-	endRow, endCol, err := bufferPositionAtOffset(selected.Text, result.End)
+	endRow, endCol, err := get2DimPositionFrom1DimPosition(selected.Text, result.End)
 	if err != nil {
 		return err
 	}
@@ -186,9 +186,9 @@ func visualSelectionRange(selected *nvimVisualSelection) (startRow, startCol, en
 	return startRow, startCol, endRow, endStart + width, nil
 }
 
-// bufferPositionAtOffset converts a zero-based byte offset to Neovim's
+// get2DimPositionFrom1DimPosition converts a zero-based byte offset to Neovim's
 // zero-based row and byte column coordinates.
-func bufferPositionAtOffset(text string, offset int) (row, column int, err error) {
+func get2DimPositionFrom1DimPosition(text string, offset int) (row int, column int, err error) {
 	if offset < 0 || offset > len(text) {
 		return 0, 0, fmt.Errorf("offset %d is outside the buffer", offset)
 	}
