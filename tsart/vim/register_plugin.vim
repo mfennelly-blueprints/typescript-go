@@ -51,13 +51,43 @@ call remote#host#Register('tsart', 'x', function('s:RequireTsart'))
 let s:RemoteHostName = 'tsart'
 let s:RemoteHostChannelIdentifier = '0'
 
-" Register the commands for this plugin.
+let s:CursorSelectionEvalLines =<< trim END
+{
+  'FileName': expand('%:p'),
+  'Text': join(getline(1, '$'), "\\n"),
+  'Line': line('.'),
+  'Column': col('.') - 1
+}
+END
+let s:CursorSelectionEval = join(s:CursorSelectionEvalLines, "\n")
+unlet s:CursorSelectionEvalLines
+
+let s:VisualSelectionEvalLines =<< trim END
+{
+  'Text': join(getline(1, '$'), "\\n"),
+  'StartLine': line("'<"),
+  'StartColumn': col("'<"),
+  'EndLine': line("'>"),
+  'EndColumn': col("'>"),
+  'Mode': visualmode()
+}
+END
+let s:VisualSelectionEval = join(s:VisualSelectionEvalLines, "\n")
+unlet s:VisualSelectionEvalLines
+
+" ASTSelectCommandRPC
+"
+" Sends an eval struct in the shape of:
+" FileName: Gets the current file - equivalent of running `:echo expand('%p')
+" Text:
+" Line:
+" Column:
 let s:ASTSelectCommandRPC = {
 \ 'type': 'command',
 \ 'name': 'TsartSelectAST',
 \ 'sync': 1,
 \ 'opts': {
-\   'eval': '{''FileName'': expand(''%:p''), ''Text'': join(getline(1, ''$''), "\\n"), ''Line'': line(''.''), ''Column'': col(''.'') - 1}',
+\   'eval': s:CursorSelectionEval,
 \ },
 \}
 
@@ -66,7 +96,7 @@ let s:ASTHighlightCmd = {
 \ 'name': 'TsartHighlightAST',
 \ 'sync': 1,
 \ 'opts': {
-\   'eval': '{''FileName'': expand(''%:p''), ''Text'': join(getline(1, ''$''), "\\n"), ''Line'': line(''.''), ''Column'': col(''.'') - 1}',
+\   'eval': s:CursorSelectionEval,
 \ },
 \}
 
@@ -84,7 +114,7 @@ let s:AnnotateSelectionCmd = {
 \ 'opts': {
 \   'nargs': '+',
 \   'range': '',
-\   'eval': '{''Text'': join(getline(1, ''$''), "\\n"), ''StartLine'': line("''<"), ''StartColumn'': col("''<"), ''EndLine'': line("''>"), ''EndColumn'': col("''>"), ''Mode'': visualmode()}',
+\   'eval': s:VisualSelectionEval,
 \ },
 \}
 
