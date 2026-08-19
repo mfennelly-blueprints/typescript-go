@@ -23,10 +23,10 @@ type Result struct {
 	Text  string
 }
 
-func parseAstForSourceFile(fileName string, sourceText string) P {
+func parseAstForSourceFile(fileName string, sourceText string) (*ast.SourceFile, error) {
 	absFileName, err := filepath.Abs(fileName)
 	if err != nil {
-		return Result{}, err
+		return &ast.SourceFile{}, err
 	}
 	absFileName = filepath.ToSlash(absFileName)
 
@@ -39,18 +39,28 @@ func parseAstForSourceFile(fileName string, sourceText string) P {
 	core_ScriptKind := core.EnsureScriptKindFromFileName(absFileName)
 	ast_SourceFile := parser.ParseSourceFile(sourceFileParsingOptions, sourceText, core_ScriptKind)
 
-	return ast_SourceFile
+	return ast_SourceFile, nil
+}
+
+func isValidCursorPosition(line int, column int) error {
+	if line < 1 || column < 0 {
+		return fmt.Errorf("invalid cursor position %d:%d", line, column)
+	}
+	return nil
 }
 
 // AstNodeAtPosition parses text as fileName and returns the AST token at the supplied
 // one-based line and zero-based byte column. sourceFileUtf8Contents is supplied by Neovim so
 // unsaved buffer changes are included in the AST.
 func AstNodeAtPosition(fileName string, sourceText string, line int, column int) (Result, error) {
-	if line < 1 || column < 0 {
-		return Result{}, fmt.Errorf("invalid cursor position %d:%d", line, column)
+	if err := isValidCursorPosition(line, column); err != nil {
+		return Result{}, err
 	}
 
-	ast_SourceFile := parseAstForSourceFile(fileName, sourceText)
+	ast_SourceFile, err := parseAstForSourceFile(fileName, sourceText)
+	if err != nil {
+		return Result{}, err
+	}
 
 	// get the position in the linearized file
 	position, err := offsetForPosition(sourceText, line, column)
